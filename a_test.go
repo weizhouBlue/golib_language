@@ -86,3 +86,69 @@ func Test_2(t *testing.T){
 
 
 }
+
+
+
+
+func Test_3(t *testing.T){
+
+	golib.EnableLog=false
+
+	// ----------------
+	a:= map[string]int { "a":1, "b":2  }
+	b:=map[string]int { "a":1, "c":1 }
+	c:=map[string]int { "a":1, "d":22 }
+
+	if  commonMap , err := golib.MapGetCommonElement( a, b  , c ) ; err!=nil {
+		fmt.Println(  err )
+		t.FailNow()
+	}else{
+		fmt.Println(  commonMap ) // map[a:1]
+	}
+
+
+	// ----------------
+	d:= map[string]interface{} { "a": []int{1,2}, "b":2  }
+	e:=map[string]interface{} { "a": []int{1,2}, "b":222  }
+	if  commonMap , err := golib.MapGetCommonElement( d , e   ) ; err!=nil {
+		fmt.Println(  err )
+		t.FailNow()
+	}else{
+		fmt.Println(  commonMap ) // map[a:[1 2]]
+	}
+
+}
+
+
+func Test_4(t *testing.T){
+
+	golib.EnableLog=false
+
+	// ----------------
+	a:= map[string]int { "a":1, "b":2  }
+	b:=map[string]int { "a":1, "c":1 }
+
+	if  vMap , err := golib.MapMinus( a, b   ) ; err!=nil {
+		fmt.Println(  err )
+		t.FailNow()
+	}else{
+		fmt.Println(  vMap ) // map[b:2]
+	}
+
+
+
+	// ----------------
+	c:= map[string]interface{} { "a": []int{1,2 }, "b": "hellp"  }
+	d:=map[string]interface{}  { "a": []int{1,2 }, "b":100  }
+
+	if  vMap , err := golib.MapMinus( c , d   ) ; err!=nil {
+		fmt.Println(  err )
+		t.FailNow()
+	}else{
+		fmt.Println(  vMap ) // map[b:hellp]
+	}
+
+
+
+}
+
