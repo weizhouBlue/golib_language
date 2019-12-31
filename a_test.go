@@ -152,3 +152,48 @@ func Test_4(t *testing.T){
 
 }
 
+
+
+
+
+func Test_5(t *testing.T){
+
+	golib.EnableLog=false
+
+	// ----------------
+	a:=[]interface{} { 1, "2", []int{1,2}  }
+
+	if  existed , err := golib.SliceCheckElement( a ,  []int{1,2} ) ; err!=nil {
+		fmt.Println(  err )
+		t.FailNow()
+	}else{
+		fmt.Println(  existed )
+	}
+
+
+
+
+
+	golib.EnableLog=false
+
+	// ----------------
+	v:=map[string]interface{} { 
+		"a": 1 ,
+		"b": "2" ,
+		"c": []int{1,2} ,
+	}
+
+	if  existed , err := golib.MapCheckElement( v , "c" , []int{1,2} ) ; err!=nil {
+		fmt.Println(  err )
+		t.FailNow()
+	}else{
+		fmt.Println(  existed )
+	}
+
+
+
+
+}
+
+
+

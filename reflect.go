@@ -357,3 +357,106 @@ NEXT_ELEMENT:
 
 
 
+
+//===================================
+
+// chceckedSlice 可以是 []interface{} , checkedElement可以是任意类型的值
+// 函数检查 chceckedSlice 中是否存在 和checkedElement值相同的元素
+func SliceCheckElement( chceckedSlice interface{} , checkedElement interface{} ) (  exist bool  ,  err error ){
+
+	exist=false
+	err=nil
+
+	if  chceckedSlice==nil || checkedElement== nil {
+		err=fmt.Errorf("empty input  " )
+		return 
+	}
+
+	//check type
+	if reflect.TypeOf(chceckedSlice).Kind()!=reflect.Slice  {
+		err=fmt.Errorf("input is not slice "  )
+		return
+	}
+
+
+	m:=reflect.ValueOf(chceckedSlice)
+NEXT_ELEMENT:	
+	for i:=0 ; i<m.Len() ; i++ {
+		if m.Index(i).CanInterface()==false{
+			err=fmt.Errorf("failed to interface{} : %v " , m.Index(i) )
+			return
+		}
+		v1:=m.Index(i).Interface()
+
+		if reflect.TypeOf(checkedElement).Kind() != reflect.TypeOf(v1).Kind() {
+			continue NEXT_ELEMENT 
+		}
+
+		if reflect.DeepEqual(v1, checkedElement)==true{
+			exist=true
+			return 
+		}
+
+	}
+
+	return 
+
+}
+
+
+
+
+
+// chceckedMap 可以是 map[string]interface{} 
+// 函数检查 chceckedMap 中是否存在  key为checkedKey、值为checkedValue 的元素
+func MapCheckElement( chceckedMap interface{} , checkedKey string , checkedValue interface{} ) (  exist bool  ,  err error ){
+
+	exist=false
+	err=nil
+
+	if  chceckedMap==nil || checkedValue== nil || len(checkedKey)==0 {
+		err=fmt.Errorf("empty input  " )
+		return 
+	}
+
+	//check type
+	if reflect.TypeOf(chceckedMap).Kind()!=reflect.Map  {
+		err=fmt.Errorf("input is not map "  )
+		return
+	}
+
+	m:=reflect.ValueOf(chceckedMap)
+NEXT_ELEMENT:	
+	for _ , k1 := range m.MapKeys() {
+		if k1.Type().Kind() !=reflect.String {
+			err=fmt.Errorf("key type is not string:  %v(%v) " , k1.Type() , k1 )
+			return
+		}
+		keyName:=k1.String()
+		if m.MapIndex(k1).CanInterface()  ==false{
+			err=fmt.Errorf("failed to interface{} : %v " , m.MapIndex(k1) )
+			return
+		}
+		v1:=m.MapIndex(k1).Interface()
+
+		if keyName!=checkedKey {
+			continue NEXT_ELEMENT
+		}
+
+		if reflect.TypeOf(checkedValue).Kind() != reflect.TypeOf(v1).Kind() {
+			continue NEXT_ELEMENT 
+		}
+
+		if reflect.DeepEqual(v1, checkedValue)==true{
+			exist=true
+			return 
+		}
+
+	}
+
+	return 
+
+}
+
+
+
