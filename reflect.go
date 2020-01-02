@@ -5,6 +5,8 @@ import(
 	"strings"
 	"runtime"
 	"strconv"
+    "github.com/mohae/deepcopy"
+
 )
 
 
@@ -46,12 +48,66 @@ func log( format string, a ...interface{} ) (n int, err error) {
 
 
 
+//====================== 实现任意 类型数据的 深拷贝 ================
+
+func DeepCopy( src interface{} )  interface{} {
+	return deepcopy.Copy(src)
+}
+
+// 实现任意 切片的 深拷贝，返回 []interface{}
+func SliceDeepCopy( src interface{} )  ( dst []interface{}, err error) {
+	var ok bool
+
+	if src==nil {
+		err=fmt.Errorf("input is nil" )
+		return 
+	}
+
+	if reflect.TypeOf(src).Kind()!=reflect.Slice {
+		err=fmt.Errorf("input is not slice : %T " , src )
+		return
+	}
+
+	v  := deepcopy.Copy(src)
+	dst , ok = v.([]interface{} )
+	if !ok {
+		err=fmt.Errorf(" %T failed to convert to  []interface{} " , dst  )
+		return 
+	}
+	return
+}
 
 
-//======================================
+
+// 实现任意 切片的 深拷贝，返回 []interface{}
+func MapDeepCopy( src interface{} )  ( dst map[string]interface{}, err error) {
+	var ok bool
+
+	if src==nil {
+		err=fmt.Errorf("input is nil" )
+		return 
+	}
+
+	if reflect.TypeOf(src).Kind()!=reflect.Map {
+		err=fmt.Errorf("input is not map : %T " , src )
+		return
+	}
+
+	v := deepcopy.Copy(src)
+	dst , ok = v.( map[string]interface{} )
+	if !ok {
+		err=fmt.Errorf(" %T failed to convert to  map[string]interface{} " , dst  )
+		return 
+	}
+	return
+}
 
 
-// 从各个切片中 提取出共同的元素，然后把这些共同的元素 组成新的切片 ，进行返回
+
+//====================== 提取 []interface{} 和 map[string]interface{} 的共同元素 ================
+
+
+// 从各个切片中 提取出共同的元素，然后把这些共同的元素 就行深拷贝后，组成新的切片 ，进行返回
 // 输入的每个切片 可以是  []interface{} 
 func SliceGetCommonElement( v ...interface{}  ) ( []interface{}  ,  error ){
 
@@ -100,7 +156,7 @@ NEXT_ELEMENT:
 		}
 		v1:=t.Index(i).Interface()
 
-		log("for %v\n" , v1 )
+		log("for %v \n" , v1 )
 
 		//loop all elemet of all slice
 NEXT_SLICE:		
@@ -112,27 +168,28 @@ NEXT_SLICE:
 				}
 				v2:=p.Index(j).Interface()
 
-				if reflect.TypeOf(v2).Kind() != reflect.TypeOf(v1).Kind() {
-					log("%v(%T) != %v(%T)" , v1 ,v1 ,v2, v2 )
-					continue 
-				}
 				if reflect.DeepEqual(v1, v2)==true{
-					log("%v(%T) == %v(%T)" , v1 ,v1 ,v2, v2 )
+					log("%v(%T) == %v(%T) \n" , v1 ,v1 ,v2, v2 )
 					continue NEXT_SLICE 
 				}else{
-					log("%v(%T) != %v(%T)" , v1 ,v1 ,v2, v2 )
+					log("%v(%T) != %v(%T) \n" , v1 ,v1 ,v2, v2 )
 				}
 			}
 			log("no common element: %v  \n" , v1  )
 			continue NEXT_ELEMENT
 		}
 		// find a common element
+		log("got element: %v \n" , v1 )
 		commonSlice=append(commonSlice, v1 )
 	}
 
-	log("get common slice: %v \n" , commonSlice )
-
-	return commonSlice, nil
+	
+	if v , e := SliceDeepCopy( commonSlice ) ; e!=nil {
+		return nil , e
+	}else{
+		log("get common slice: %v \n" , v )
+		return v , nil
+	}
 
 }
 
@@ -203,46 +260,43 @@ NEXT_SLICE:
 					return nil , fmt.Errorf("key type is not string:  %v(%v) " , m.Type() , m )
 				}
 				vKeyName:=m.String()
-				if keyName!=vKeyName {
-					log("key(%v) != key(%v)" , keyName ,vKeyName )
-					continue 
-				}
-
-				// check the vlaue
 				if p.MapIndex(m).CanInterface()  ==false{
 					return nil , fmt.Errorf("failed to interface{} : %v " , p.MapIndex(m) )
 				} 
 				v2:=p.MapIndex(m).Interface()
-				if reflect.TypeOf(v2).Kind() != reflect.TypeOf(v1).Kind() {
-					log("%v(%T) != %v(%T)" , v1 ,v1 ,v2, v2 )
-					continue 
-				}
-				if reflect.DeepEqual(v1, v2)==true{
-					log("%v(%T) == %v(%T)" , v1 ,v1 ,v2, v2 )
-					continue NEXT_SLICE 
+
+
+				if keyName==vKeyName && reflect.DeepEqual(v1, v2)==true {
+					continue NEXT_SLICE
 				}else{
-					log("%v(%T) != %v(%T)" , v1 ,v1 ,v2, v2 )
+					log("%v(%v) != %v(%v) \n" , keyName  ,v1 ,vKeyName , v2)
+					continue
 				}
 			}
 			log("no common element: %v=%v  \n" ,keyName ,  v1  )
 			continue NEXT_ELEMENT
 		}
 		// find a common element
+		log("got element: %v=%v \n" , keyName , v1 )
 		commonMap[keyName]=v1
 	}
 
-	log("get common map: %v \n" , commonMap )
+	if v , e := MapDeepCopy( commonMap ) ; e!=nil {
+		return nil , e
+	}else{
+		log("get common map: %v \n" , v )
+		return v , nil
+	}
 
-	return commonMap, nil
 
 }
 
 
-//===================================
+//================== 实现 []interface{} 和 map[string]interface{} 的 集合间相减的运算=================
 
 // subtrahend 切片 扮演 被减数 ， minuend切片 扮演 减数，实现集合的减法，在subtrahend中 去除所有minuend中出现的元素 ，最后返回新的切片
 // subtrahend 和 minuend切片中的 所有成员的 可以是任何数据类型，且可以各不相同
-func SliceMinus( subtrahend , minuend interface{}  ) (  output []interface{}  ,  err error ){
+func SliceMinus( subtrahend , minuend interface{}  ) (   []interface{}  ,  error ){
 
 	//check type
 	if reflect.TypeOf(subtrahend).Kind()!=reflect.Slice || reflect.TypeOf(minuend).Kind()!=reflect.Slice {
@@ -254,7 +308,7 @@ func SliceMinus( subtrahend , minuend interface{}  ) (  output []interface{}  , 
 	}
 
 
-	output=[]interface{} { }
+	output:=[]interface{} { }
 
 	m:=reflect.ValueOf(subtrahend)
 	n:=reflect.ValueOf(minuend)
@@ -271,21 +325,24 @@ NEXT_ELEMENT:
 			}
 			v2:=n.Index(j).Interface()
 
-			if reflect.TypeOf(v2).Kind() != reflect.TypeOf(v1).Kind() {
-				log("%v(%T) != %v(%T)" , v1 ,v1 ,v2, v2 )
-				continue NEXT_ELEMENT 
-			}
 			if reflect.DeepEqual(v1, v2)==true{
-				log("%v(%T) == %v(%T)" , v1 ,v1 ,v2, v2 )
+				log(" %v(%T) == %v(%T) \n" , v1 ,v1 ,v2, v2 )
 				continue NEXT_ELEMENT 
 			}else{
-				log("%v(%T) != %v(%T)" , v1 ,v1 ,v2, v2 )				
+				log(" %v(%T) != %v(%T) \n" , v1 ,v1 ,v2, v2 )				
 			}
 		}
+		log("got element: %v \n"  , v1 )
 		output=append(output , v1 )
 	}
 
-	return output, nil
+	if v , e := SliceDeepCopy( output ) ; e!=nil {
+		return nil , e
+	}else{
+		log("get slice: %v \n" , v )
+		return v , nil
+	}
+
 
 }
 
@@ -348,17 +405,229 @@ NEXT_ELEMENT:
 				log("%v(%T) != %v(%T)" , v1 ,v1 ,v2, v2 )
 			}
 		}
+		log("got element: %v=%v \n" , keyName , v1 )
 		output[keyName]=v1 
 	}
 
-	return output, nil
+
+	if v , e := MapDeepCopy( output ) ; e!=nil {
+		return nil , e
+	}else{
+		log("get map: %v \n" , v )
+		return v , nil
+	}
 
 }
 
 
 
 
-//===================================
+
+
+
+//================== 实现 []interface{} 和 map[string]interface{} 中重复元素 去重 =================
+
+// 实现 chceckedSlice []interface{} 中的 重复元素 去重
+func SliceRmRepeatedElem( chceckedSlice interface{}  ) (   []interface{}  ,   error ){
+
+	resultSlice:=[]interface{} {}
+
+	if  chceckedSlice==nil  {
+		return nil , fmt.Errorf("empty input  " )
+	}
+
+	//check type
+	if reflect.TypeOf(chceckedSlice).Kind()!=reflect.Slice  {
+		return nil , fmt.Errorf("input is not slice "  )
+	}
+
+
+	m:=reflect.ValueOf(chceckedSlice)
+	length:=m.Len()
+NEXT_ELEMENT:	
+	for i:=0 ; i<length ; i++ {
+		if m.Index(i).CanInterface()==false{
+			return nil , fmt.Errorf("failed to interface{} : %v " , m.Index(i) )
+		}
+		v1:=m.Index(i).Interface()
+
+
+		for j:=i+1 ; j<length ; j++ {
+			if m.Index(j).CanInterface()==false{
+				return nil , fmt.Errorf("failed to interface{} : %v " , m.Index(j) )
+			}
+			v2:=m.Index(j).Interface()
+
+			if reflect.TypeOf(v2).Kind() != reflect.TypeOf(v1).Kind() {
+				continue  
+			}
+			if reflect.DeepEqual(v1, v2)==true{
+				continue NEXT_ELEMENT 
+			}
+		}
+		resultSlice=append(resultSlice , v1 )
+
+	}
+
+
+	if v , e := SliceDeepCopy( resultSlice ) ; e!=nil {
+		return nil , e
+	}else{
+		log("get slice: %v \n" , v )
+		return v , nil
+	} 
+
+}
+
+
+// 因为map[string]interface{} 中，key必须是不能重复的，所以，本函数是去除 key不同但是vlaue相同的元素
+func MapRmRepeatedElem( chceckedMap interface{} ) (   map[string]interface{}  ,   error ){
+
+	resultMap:=map[string]interface{} {}
+
+	if  chceckedMap==nil {
+		return nil ,fmt.Errorf("empty input  " )
+	}
+	//check type
+	if reflect.TypeOf(chceckedMap).Kind()!=reflect.Map  {
+		return nil , fmt.Errorf("input is not map "  )
+	}
+
+	m:=reflect.ValueOf(chceckedMap)
+	keyList:=m.MapKeys()
+	length:=len(keyList)
+NEXT_ELEMENT:	
+	for i:=0 ; i<length ; i++ {
+		k1:=keyList[i]
+		if k1.Type().Kind() !=reflect.String {
+			return nil , fmt.Errorf("key type is not string:  %v(%v) " , k1.Type() , k1 )
+		}
+		key1Name:=k1.String()
+		if m.MapIndex(k1).CanInterface()  ==false{
+			return nil , fmt.Errorf("failed to interface{} : %v " , m.MapIndex(k1) )
+		}
+		v1:=m.MapIndex(k1).Interface()
+
+
+		for j:=i+1 ; j<length ; j++ {
+			k2:=keyList[j]
+			if k2.Type().Kind() !=reflect.String {
+				return nil , fmt.Errorf("key type is not string:  %v(%v) " , k2.Type() , k2 )
+			}
+			key2Name:=k2.String()
+			if m.MapIndex(k2).CanInterface()  ==false{
+				return nil , fmt.Errorf("failed to interface{} : %v " , m.MapIndex(k2) )
+			}
+			v2:=m.MapIndex(k2).Interface()
+
+			if  reflect.DeepEqual(v1, v2)  {
+				log("key %v has same value with key %v , rm %v \n",key1Name , key2Name , key1Name )
+				continue NEXT_ELEMENT
+			}
+		}
+		resultMap[key1Name]=v1
+
+	}
+
+	if v , e := MapDeepCopy( resultMap ) ; e!=nil {
+		return nil , e
+	}else{
+		log("get map: %v \n" , v )
+		return v , nil
+	}
+	 
+}
+
+
+//================== 实现 []interface{} 和 map[string]interface{} 的集合相加运算（ 切片 会去除重复的值 ） =================
+
+
+
+// 实现 多个 切片  集合相加运算（ 切片 会去除重复的值 ）
+func SliceAdd( inputList ... interface{}  ) (   []interface{}  ,  error ){
+
+	tmpSlice:=[]interface{} {}
+
+	if  inputList==nil  || len(inputList)==0 {
+		return nil , fmt.Errorf("empty input  " )
+	}
+
+
+	for _ , v := range inputList {
+		//check type
+		if reflect.TypeOf(v).Kind()!=reflect.Slice  {
+			return nil , fmt.Errorf("input is not slice: %v" , v  )
+		}
+
+		// add all element
+		m:=reflect.ValueOf(v)
+		length:=m.Len()
+		for i:=0 ; i<length ; i++ {
+			if m.Index(i).CanInterface()==false{
+				return nil , fmt.Errorf("failed to interface{} : %v " , m.Index(i) )
+			}
+			tmpSlice=append(tmpSlice , m.Index(i).Interface() )
+		}
+
+	}
+
+	// rm repeated element
+	if  result , e := SliceRmRepeatedElem( tmpSlice ) ; e!=nil {
+		return nil , e
+	}else{
+		if v , e := SliceDeepCopy( result ) ; e!=nil {
+			return nil , e
+		}else{
+			log("get slice: %v \n" , v )
+			return v , nil
+		} 
+	}
+
+}
+
+
+
+// 实现 多个 map[string]interface{}  集合相加运算，不允许 他们都相同的 key 名
+func MapAdd( inputList ... interface{} ) (   map[string]interface{}  ,   error ){
+
+	resultMap:=map[string]interface{} {}
+	for _ , v := range inputList {
+		//check type
+		if reflect.TypeOf(v).Kind()!=reflect.Map  {
+			return nil , fmt.Errorf("input is not map: %v" , v  )
+		}
+
+		// add all element
+		m:=reflect.ValueOf(v)
+		for _ , k1 := range m.MapKeys() {
+			if k1.Type().Kind() !=reflect.String {
+				return nil , fmt.Errorf("key type is not string:  %v(%v) " , k1.Type() , k1 )
+			}
+			keyName:=k1.String()
+			if m.MapIndex(k1).CanInterface()  ==false{
+				return nil , fmt.Errorf("failed to interface{} : %v " , m.MapIndex(k1) )
+			}
+			v1:=m.MapIndex(k1).Interface()
+
+			if _ , ok :=resultMap[keyName] ; ok {
+				return nil , fmt.Errorf("there are same key(%v) in Maps " , keyName )
+			}
+			resultMap[keyName]=v1
+		}
+	}
+
+	if v , e := MapDeepCopy( resultMap ) ; e!=nil {
+		return nil , e
+	}else{
+		log("get map: %v \n" , v )
+		return v , nil
+	}
+}
+
+
+
+
+//================== 确认 []interface{} 和 map[string]interface{} 中元素存在 =================
 
 // chceckedSlice 可以是 []interface{} , checkedElement可以是任意类型的值
 // 函数检查 chceckedSlice 中是否存在 和checkedElement值相同的元素

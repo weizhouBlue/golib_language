@@ -7,6 +7,29 @@ import (
 
 
 
+func Test_0(t *testing.T){
+
+	var ok bool
+
+	old:=map[string]int{ "old":100 }
+	a :=[]interface{}{	old }
+	b := make( []interface{} , len(a) )
+
+	v:=golib.DeepCopy(a)
+	b , ok = v.( []interface{} ) 
+	if !ok {
+		fmt.Println("failed to convert type")
+	}
+	fmt.Println(b) // [map[old:100]]
+
+	old["old"]=200
+	fmt.Println(a)  // [map[old:200]]
+	fmt.Println(b)  // [map[old:100]]
+
+}
+
+
+
 
 func Test_1(t *testing.T){
 
@@ -75,13 +98,13 @@ func Test_2(t *testing.T){
 
 
 	// ----------------
-	e:=[]interface{} { 1 , "abc" , []int{1,2} , map[string]int{"a":100} }
-	f:=[]interface{} { []int{1,2}  }
-	if  k , err := golib.SliceMinus( e , f ) ; err!=nil {
+	e:=map[string]interface{} { "a": []int{1,2} , "b":100  , "c":"mm" }
+	f:=map[string] []int { "a": []int{1,2}  }
+	if  k , err := golib.MapMinus( e , f ) ; err!=nil {
 		fmt.Println(  err )
 		t.FailNow()
 	}else{
-		fmt.Println(  k ) // [1 abc map[a:100]]
+		fmt.Println(  k ) // map[b:100 c:mm]
 	}
 
 
@@ -167,15 +190,10 @@ func Test_5(t *testing.T){
 		fmt.Println(  err )
 		t.FailNow()
 	}else{
-		fmt.Println(  existed )
+		fmt.Println(  existed ) //true
 	}
 
-
-
-
-
 	golib.EnableLog=false
-
 	// ----------------
 	v:=map[string]interface{} { 
 		"a": 1 ,
@@ -187,11 +205,83 @@ func Test_5(t *testing.T){
 		fmt.Println(  err )
 		t.FailNow()
 	}else{
-		fmt.Println(  existed )
+		fmt.Println(  existed )  // true
+	}
+
+}
+
+
+
+
+
+func Test_6(t *testing.T){
+
+	golib.EnableLog=false
+
+	// ----------------
+	a:=[]interface{} { 1, "2", []int{1,2} , "2" , 1  , "2" }
+	if  result , err := golib.SliceRmRepeatedElem( a  ) ; err!=nil {
+		fmt.Println(  err )
+		t.FailNow()
+	}else{
+		fmt.Println(  result )  // [[1 2] 1 2]
 	}
 
 
+	b:=[]int { 1, 2, 3 ,2 ,1  , 2 }
+	if  result , err := golib.SliceRmRepeatedElem( b ) ; err!=nil {
+		fmt.Println(  err )
+		t.FailNow()
+	}else{
+		fmt.Println(  result ) // [3 1 2]
+	}
 
+
+	// ----------------
+	v:=map[string]interface{} { 
+		"a": 1 ,
+		"b": "2" ,
+		"c": []int{1,2} ,
+		"d": 1 ,
+		"e": 1 ,
+	}
+	if  result , err := golib.MapRmRepeatedElem( v  ) ; err!=nil {
+		fmt.Println(  err )
+		t.FailNow()
+	}else{
+		fmt.Println(  result ) //map[a:1 b:2 c:[1 2]]
+	}
+
+}
+
+
+
+
+func Test_7(t *testing.T){
+
+	golib.EnableLog=false
+
+	// ----------------
+	a:=[]interface{} { 1, "mm", []int{1,2} , "mm" , 1  }
+	b:=[]int { 1 ,2, 3 }
+	c:=[]string{ "mm" , "nn" , "mm" }
+	if  result , err := golib.SliceAdd( a , b ,c  ) ; err!=nil {
+		fmt.Println(  err )
+		t.FailNow()
+	}else{
+		fmt.Println(  result ) // [[1 2] 1 2 3 nn mm]
+	}
+
+	// ----------------
+	d:=map[string]interface{} { "a":1, "b":"mm", "c": []int{1,2}  }
+	e:=map[string]int { "d":1 , "e":2 }
+	f:=map[string]string { "f": "a" , "g":"b" }
+	if  result , err := golib.MapAdd(  d , e ,f  ) ; err!=nil {
+		fmt.Println(  err )
+		t.FailNow()
+	}else{
+		fmt.Println(  result ) // map[a:1 b:mm c:[1 2] d:1 e:2 f:a g:b]
+	}
 
 }
 
