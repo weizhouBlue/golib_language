@@ -26,9 +26,45 @@ func Test_0(t *testing.T){
 	fmt.Println(a)  // [map[old:200]]
 	fmt.Println(b)  // [map[old:100]]
 
+
+
+
 }
 
 
+func Test_01(t *testing.T){
+
+	a:=[]interface{} {
+		"avc",
+		111 ,
+		map[string] string {
+			"m":"44",
+			"n": "55" , 
+		} ,
+	}
+
+	if result , e:=golib.SliceDeepCopy(a) ; e!=nil{
+		fmt.Printf("failed %v ", e)
+	}else{
+		fmt.Println(result) // 
+
+	}
+
+
+	b:=map[string] string  {
+			"m":"44",
+			"n": "55" , 
+	}
+
+	if result , e:=golib.MapDeepCopy(b) ; e!=nil{
+		fmt.Printf("failed %v ", e)
+	}else{
+		fmt.Println(result) // 
+
+	}
+
+
+}
 
 
 func Test_1(t *testing.T){
@@ -297,12 +333,11 @@ func Test_8(t *testing.T){
 
 	// ----------------
 	a:=[]interface{} {
-		map[string] inteface{} {
-			"a1": "100",
-			"a2": "103",
-		} , 
 		map[string] string {
 			"b2": "101",
+		} , 
+		map[string] interface{} {
+			"b1": "101",
 		} , 
 	}
 

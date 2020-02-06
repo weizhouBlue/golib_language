@@ -33,6 +33,8 @@ func SliceCheckElement( chceckedSlice interface{} , checkedElement interface{} )
 func MapCheckElement( chceckedMap interface{} , checkedKey string , checkedValue interface{} ) (  exist bool  ,  err error )
 
 func SliceToSliceMapStringString( srcSlice interface{} ) ( []map[string]string , error )
+func InterfaceToSliceInterface( src interface{} ) ( []interface{} , error )
+func InterfaceToMapStringInterface( src interface{} ) ( map[string]interface{} , error )
 
 */
 
@@ -183,7 +185,6 @@ func operateSlice( data interface{} ) error {
 	}
 
 	val:=reflect.ValueOf(data)
-	// 轮询 结构体中的 字段
 	for index :=0 ; index <  val.Len(); index++ {
 		elemValue:=val.Index(index)
 		// 假设 value 是 一个 string ，那么我们 直接 从value  取出
@@ -272,6 +273,61 @@ func operateStruct( data interface{} ) error {
 	return nil
 }
 
+//---------------------------------
+
+func InterfaceToSliceInterface( src interface{} ) ( []interface{} , error ) {
+	if src == nil {
+		return nil, fmt.Errorf("InterfaceToSliceInterface , empty input  "  )
+	}
+
+	if reflect.TypeOf(src).Kind()!=reflect.Slice {
+		return nil , fmt.Errorf("input is not slice : %T " , src )
+	}
+	result:=[]interface{} {}
+
+	val:=reflect.ValueOf(src)
+	// 轮询 结构体中的 字段
+	for index :=0 ; index <  val.Len(); index++ {
+		elemValue:=val.Index(index)
+		if elemValue.CanInterface()==true {
+			result=append(result , elemValue.Interface() )
+		}
+	}
+
+	return result , nil
+}
+
+
+
+func InterfaceToMapStringInterface( src interface{} ) ( map[string]interface{} , error ) {
+	if src == nil {
+		return nil , fmt.Errorf(" InterfaceToMapStringInterface , empty input"  )
+	}
+
+	if reflect.TypeOf(src).Kind()!=reflect.Map {
+		return nil , fmt.Errorf("input is not map : %T " , src )
+	}
+
+	result:=map[string]interface{} {}
+
+	val:=reflect.ValueOf(src)
+	for _ , k1 := range val.MapKeys() {
+		// 假设 key 是 string 类型，则以以下方式取出
+		if k1.Type().Kind() !=reflect.String {
+			return nil , fmt.Errorf(" key type is not string:  %v(%v) " , k1.Type() , k1 )
+		}
+
+		keyVal:=val.MapIndex(k1)
+		// 假设 value 是 一个 string ，那么我们 直接 从value  取出
+		if keyVal.CanInterface()==false {
+			return nil , fmt.Errorf(" value can not CanInterface :  %v(%v) " , keyVal.Type() , keyVal )
+		}
+
+		result[k1.String()]=keyVal.Interface()
+    }
+
+    return result , nil 
+}
 
 
 //====================== 实现任意 类型数据的 深拷贝 ================
@@ -282,7 +338,6 @@ func DeepCopy( src interface{} )  interface{} {
 
 // 实现任意 切片的 深拷贝，返回 []interface{}
 func SliceDeepCopy( src interface{} )  ( dst []interface{}, err error) {
-	var ok bool
 
 	if src==nil {
 		err=fmt.Errorf("input is nil" )
@@ -295,19 +350,13 @@ func SliceDeepCopy( src interface{} )  ( dst []interface{}, err error) {
 	}
 
 	v  := deepcopy.Copy(src)
-	dst , ok = v.([]interface{} )
-	if !ok {
-		err=fmt.Errorf(" %T failed to convert to  []interface{} " , dst  )
-		return 
-	}
-	return
+	return InterfaceToSliceInterface(v)
 }
 
 
 
 // 实现任意 切片的 深拷贝，返回 []interface{}
 func MapDeepCopy( src interface{} )  ( dst map[string]interface{}, err error) {
-	var ok bool
 
 	if src==nil {
 		err=fmt.Errorf("input is nil" )
@@ -320,12 +369,7 @@ func MapDeepCopy( src interface{} )  ( dst map[string]interface{}, err error) {
 	}
 
 	v := deepcopy.Copy(src)
-	dst , ok = v.( map[string]interface{} )
-	if !ok {
-		err=fmt.Errorf(" %T failed to convert to  map[string]interface{} " , dst  )
-		return 
-	}
-	return
+	return InterfaceToMapStringInterface(v)
 }
 
 
