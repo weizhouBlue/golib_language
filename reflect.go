@@ -32,6 +32,8 @@ func MapAdd( inputList ... interface{} ) (   map[string]interface{}  ,   error )
 func SliceCheckElement( chceckedSlice interface{} , checkedElement interface{} ) (  exist bool  ,  err error )
 func MapCheckElement( chceckedMap interface{} , checkedKey string , checkedValue interface{} ) (  exist bool  ,  err error )
 
+func SliceToSliceMapStringString( srcSlice interface{} ) ( []map[string]string , error )
+
 */
 
 //============================================
@@ -70,6 +72,205 @@ func log( format string, a ...interface{} ) (n int, err error) {
     return  0,nil
 }
 
+
+
+
+//-------------------- 遍历 各种 结构体的 例子-------------------
+
+func operateBasic( data interface{} ) error {
+
+	val:=reflect.ValueOf(data)
+
+	if reflect.TypeOf(data).Kind()==reflect.Bool {
+		//get bool data from value struct
+		fmt.Println( val.Bool()  )
+
+		//set bool value
+		if val.CanSet()==true {
+			val.SetBool(true)
+		}
+	}
+
+	if reflect.TypeOf(data).Kind()==reflect.String {
+		//get string data from value struct
+		fmt.Println( val.String()  )
+
+		//set string value
+		if val.CanSet()==true {
+			val.SetString("hello")
+		}
+	}
+
+	if reflect.TypeOf(data).Kind()==reflect.Int {
+		//get int data from value struct
+		fmt.Println( val.Int()  )
+
+		//set int value
+		if val.CanSet()==true {
+			val.SetInt(100)
+		}
+	}
+
+	// 如果数据是 其它复杂的结构，我们可以 以 interface{} 类型取出后，进行 迭代、细致的深入分析
+	if val.CanInterface()==true {
+		//get int data from value struct
+		fmt.Printf(" value=%v \n" , val.Interface() )
+	}
+
+
+	return nil
+}
+
+
+
+
+func operateMap( chceckedMap interface{} ) error {
+	if  chceckedMap==nil {
+		return fmt.Errorf("empty input  " )
+	}
+
+	//check type
+	if reflect.TypeOf(chceckedMap).Kind()!=reflect.Map  {
+		return fmt.Errorf("input is not map "  )
+	}
+
+	val:=reflect.ValueOf(chceckedMap)
+	for _ , k1 := range val.MapKeys() {
+		// 假设 key 是 string 类型，则以以下方式取出
+		if k1.Type().Kind() !=reflect.String {
+			return fmt.Errorf(" key type is not string:  %v(%v) " , k1.Type() , k1 )
+		}
+		//get
+		fmt.Printf(" value=%v \n" , k1.String()  )
+		//set
+		if k1.CanSet()==true {
+			k1.SetString("KeyName")
+		}
+
+
+		keyVal:=val.MapIndex(k1)
+		// 假设 value 是 一个 string ，那么我们 直接 从value  取出
+		if keyVal.Kind() ==reflect.String {
+			//get
+			fmt.Printf(" value=%v \n" , keyVal.String()  )
+			//set
+			if keyVal.CanSet()==true {
+				keyVal.SetString("hello")
+			}
+		}
+		// 假设 value 是 一个 复杂类型，那么我们以 inteface{} 取出后，可以再做 更加细致的分析
+		if keyVal.CanInterface()==true {
+			fmt.Printf(" value=%v \n" , keyVal.Interface()  )
+		}
+		// 设置 key下的整个值 
+		val.SetMapIndex( k1 ,  reflect.ValueOf( []int{1,2,3}  )  )
+
+    }
+    return nil 
+}
+
+
+
+func operateSlice( data interface{} ) error {
+
+	if  data==nil {
+		return fmt.Errorf("empty input  " )
+	}
+
+	//check type
+	if reflect.TypeOf(data).Kind()!=reflect.Slice  {
+		return fmt.Errorf("input is not slice "  )
+	}
+
+	val:=reflect.ValueOf(data)
+	// 轮询 结构体中的 字段
+	for index :=0 ; index <  val.Len(); index++ {
+		elemValue:=val.Index(index)
+		// 假设 value 是 一个 string ，那么我们 直接 从value  取出
+		if elemValue.Kind() ==reflect.String {
+			//get
+			fmt.Printf(" value=%v \n" , elemValue.String()  )
+			//set
+			if elemValue.CanSet()==true {
+				elemValue.SetString("hello")
+			}
+		}
+		// 假设 value 是 一个 复杂类型，那么我们以 inteface{} 取出后，可以再做 更加细致的分析
+		if elemValue.CanInterface()==true {
+			fmt.Printf(" value=%v \n" , elemValue.Interface()  )
+		}
+
+
+	}
+	return nil
+}
+
+func operateStruct( data interface{} ) error {
+
+	if  data==nil {
+		return fmt.Errorf("empty input  " )
+	}
+
+	//check type
+	if reflect.TypeOf(data).Kind()!=reflect.Struct  {
+		return fmt.Errorf("input is not struct "  )
+	}
+
+	val:=reflect.ValueOf(data)
+	// 轮询 结构体中的 字段
+	for index :=0 ; index <  val.NumField(); index++ {
+		elemValue:=val.Field(index)
+		// 假设 value 是 一个 string ，那么我们 直接 从value  取出
+		if elemValue.Kind() ==reflect.String {
+			//get
+			fmt.Printf(" value=%v \n" , elemValue.String()  )
+			//set
+			if elemValue.CanSet()==true {
+				elemValue.SetString("hello")
+			}
+		}
+		// 假设 value 是 一个 复杂类型，那么我们以 inteface{} 取出后，可以再做 更加细致的分析
+		if elemValue.CanInterface()==true {
+			fmt.Printf(" value=%v \n" , elemValue.Interface()  )
+		}
+
+
+	}
+
+	//获取 结构体中的指定 field 的value
+	t:=val.FieldByName("name")
+	if t.IsValid() && t.Kind() ==reflect.String {
+		//get
+		fmt.Printf(" value=%v \n" , t.String()  )
+	}
+
+
+	//轮询结构体的方法
+	for index :=0 ; index <  val.NumMethod(); index++ {
+		funValue:=val.Method(index)
+		//get info
+		funMethod:=funValue.Type().Method(0)
+		fmt.Printf(" fun Name=%v  , pkgPath=%v , fun type=%v \n" , funMethod.Name , funMethod.PkgPath  , funMethod.Type.Kind() )
+	}
+
+	// 获取 结构体中的 方法
+	funValue:=val.MethodByName("FuncA") // 方法第一个字母要大写，不然panic
+	if funValue.IsValid() {
+		//get info
+		funMethod:=funValue.Type().Method(0)
+		fmt.Printf(" fun Name=%v  , pkgPath=%v , fun type=%v \n" , funMethod.Name , funMethod.PkgPath  , funMethod.Type.Kind() )
+
+		// 进行方法调用 ， 入参 
+		//output := f.Call( []reflecct.Value{ reflect.ValueOf(1) , reflect.ValueOf("tt") }  )
+		// 无入参
+		valueList := funValue.Call( []reflect.Value{ }  )
+		for _ ,v := range valueList {
+			fmt.Printf(" value=%v \n" , v.Interface()  )
+		}
+	}
+
+	return nil
+}
 
 
 
@@ -749,6 +950,63 @@ NEXT_ELEMENT:
 	}
 
 	return 
+
+}
+
+
+//-----------------------------------
+// generate []map[string]string from  []interface{}
+// 入参 []interface{}  必须是   []map[string]string  数据格式
+func SliceToSliceMapStringString( srcSlice interface{} ) ( []map[string]string , error ) {
+
+	if  srcSlice==nil {
+		return nil , fmt.Errorf("empty input  " )
+	}
+
+
+	//check type
+	if reflect.TypeOf(srcSlice).Kind()!=reflect.Slice  {
+		return  nil , fmt.Errorf("input is not slice "  )
+	}
+
+	result:=[] map[string]string {}
+
+	m:=reflect.ValueOf(srcSlice)
+	for i:=0 ; i<m.Len() ; i++ {
+		// get element value
+		if m.Index(i).CanInterface()==false{
+			return nil , fmt.Errorf("failed to interface{} : %v " , m.Index(i) )
+		}
+		v1:=m.Index(i).Interface()
+
+		//
+		if reflect.TypeOf(v1).Kind() != reflect.Map {
+			return nil , fmt.Errorf(" has a bad elemnt ( not type of Map[string]string ) : %v " , v1 )
+		}else{
+			//loop map
+			tmp:=map[string]string {}
+			v2:=reflect.ValueOf(v1)
+			for _ , key := range v2.MapKeys() {
+				// get key
+				if key.Kind() !=reflect.String {
+					return nil , fmt.Errorf("element %v , key type is not string " , key )
+				}
+				keyName:=key.String()
+
+				// get value
+				if v2.MapIndex(key).Kind() !=reflect.String {
+					return nil , fmt.Errorf("element %v , value type is not string " , v2 )
+				}
+				KeyValue:=v2.MapIndex(key).String()
+
+				//
+				tmp[keyName]=KeyValue
+			}
+			result=append(result ,tmp  )
+		}
+	}
+
+	return result , nil 
 
 }
 

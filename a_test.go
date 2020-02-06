@@ -287,3 +287,54 @@ func Test_7(t *testing.T){
 
 
 
+
+
+
+
+func Test_8(t *testing.T){
+
+	golib.EnableLog=false
+
+	// ----------------
+	a:=[]interface{} {
+		map[string] inteface{} {
+			"a1": "100",
+			"a2": "103",
+		} , 
+		map[string] string {
+			"b2": "101",
+		} , 
+	}
+
+	if  result , err := golib.SliceToSliceMapStringString( a  ) ; err!=nil {
+		fmt.Println(  err )
+		t.FailNow()
+	}else{
+		fmt.Println(  result ) // [[1 2] 1 2 3 nn mm]
+	}
+
+
+	a=[]interface{} {
+		map[string] interface{} {
+			"a1": 100 ,
+			"a2": "103",
+		} , 
+		map[string] string {
+			"b2": "101",
+		} , 
+	}
+
+	if  result , err := golib.SliceToSliceMapStringString( a  ) ; err!=nil {
+		fmt.Println(  err )
+		t.FailNow()
+	}else{
+		fmt.Println(  result ) // [[1 2] 1 2 3 nn mm]
+	}
+
+
+
+
+}
+
+
+
