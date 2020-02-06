@@ -11,6 +11,31 @@ import(
 
 
 
+/*
+
+func DeepCopy( src interface{} )  interface{} 
+func SliceDeepCopy( src interface{} )  ( dst []interface{}, err error) 
+func MapDeepCopy( src interface{} )  ( dst map[string]interface{}, err error) 
+
+func SliceGetCommonElement( v ...interface{}  ) ( []interface{}  ,  error )
+func MapGetCommonElement( v ...interface{}  ) ( map[string]interface{}  ,  error )
+
+func SliceMinus( subtrahend , minuend interface{}  ) (   []interface{}  ,  error )
+func MapMinus( subtrahend , minuend interface{}  ) (  map[string]interface{}  ,   error )
+
+func SliceRmRepeatedElem( chceckedSlice interface{}  ) (   []interface{}  ,   error )
+func MapRmRepeatedElem( chceckedMap interface{} ) (   map[string]interface{}  ,   error )
+
+func SliceAdd( inputList ... interface{}  ) (   []interface{}  ,  error )
+func MapAdd( inputList ... interface{} ) (   map[string]interface{}  ,   error )
+
+func SliceCheckElement( chceckedSlice interface{} , checkedElement interface{} ) (  exist bool  ,  err error )
+func MapCheckElement( chceckedMap interface{} , checkedKey string , checkedValue interface{} ) (  exist bool  ,  err error )
+
+*/
+
+//============================================
+
 var (
     EnableLog=false	
 )
