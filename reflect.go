@@ -13,27 +13,51 @@ import(
 
 /*
 
+#任意数据结构，实现 deep copy
 func DeepCopy( src interface{} )  interface{} 
+#比较任意2个数据是否相等
+func DeepEqual( x, y interface{}  ) bool 
+# 切片 实现 deep copy
 func SliceDeepCopy( src interface{} )  ( dst []interface{}, err error) 
+# map 实现 deep copy
 func MapDeepCopy( src interface{} )  ( dst map[string]interface{}, err error) 
 
+#多个切片 之间，提取出共同元素
 func SliceGetCommonElement( v ...interface{}  ) ( []interface{}  ,  error )
+#多个map之间，提取出共同元素
 func MapGetCommonElement( v ...interface{}  ) ( map[string]interface{}  ,  error )
 
+# 切片 之间，实现 集合 减运算
 func SliceMinus( subtrahend , minuend interface{}  ) (   []interface{}  ,  error )
+# map 之间，实现 集合 减运算
 func MapMinus( subtrahend , minuend interface{}  ) (  map[string]interface{}  ,   error )
 
+# 一个切片中，去除重复元素后，返回一个新的切片
 func SliceRmRepeatedElem( chceckedSlice interface{}  ) (   []interface{}  ,   error )
+# 一个map中，去除重复元素后，返回一个新的map
 func MapRmRepeatedElem( chceckedMap interface{} ) (   map[string]interface{}  ,   error )
 
+#实现多个切片 的 集合加 运算 （不会出现重复成员）
 func SliceAdd( inputList ... interface{}  ) (   []interface{}  ,  error )
+#实现多个map 的 集合加 运算 （不会出现重复成员）
 func MapAdd( inputList ... interface{} ) (   map[string]interface{}  ,   error )
 
+#确认切片中，是否存在 某个成员
 func SliceCheckElement( chceckedSlice interface{} , checkedElement interface{} ) (  exist bool  ,  err error )
+#确认mao中，是否存在 某个键值对
 func MapCheckElement( chceckedMap interface{} , checkedKey string , checkedValue interface{} ) (  exist bool  ,  err error )
 
+#确认切片中，是否存在重复成员
+func SliceCheckRepeatedElement( chceckedSlice interface{} ) (  repeated bool  ,  err error )
+#检查 map中，是否存在 值重复 （map中，key不可以重复，但不同的key可以有相同的value）
+func MapCheckRepeatedValue( chceckedMap interface{}  ) (  repeated bool  ,  err error )
+
+
+// 格式转换，一个切片[]interface{} ，转换为 [] map[string]string  类型
 func SliceToSliceMapStringString( srcSlice interface{} ) ( []map[string]string , error )
+// 格式转换， interface{} ，转换为 []interface{}  类型
 func InterfaceToSliceInterface( src interface{} ) ( []interface{} , error )
+// 格式转换， interface{} ，转换为 map[string]interface{} 类型
 func InterfaceToMapStringInterface( src interface{} ) ( map[string]interface{} , error )
 
 */
@@ -116,7 +140,11 @@ func operateBasic( data interface{} ) error {
 	// 如果数据是 其它复杂的结构，我们可以 以 interface{} 类型取出后，进行 迭代、细致的深入分析
 	if val.CanInterface()==true {
 		//get int data from value struct
-		fmt.Printf(" value=%v \n" , val.Interface() )
+		a:=val.Interface()
+		fmt.Printf(" value=%v \n" , a )
+		if v , ok := a.(string) ; ok {
+				fmt.Printf(" interface{} is string =%v \n" , v )
+		}
 	}
 
 
@@ -336,6 +364,13 @@ func DeepCopy( src interface{} )  interface{} {
 	return deepcopy.Copy(src)
 }
 
+
+func DeepEqual( x, y interface{}  ) bool {
+	return reflect.DeepEqual(x,y)
+}
+
+
+
 // 实现任意 切片的 深拷贝，返回 []interface{}
 func SliceDeepCopy( src interface{} )  ( dst []interface{}, err error) {
 
@@ -462,6 +497,7 @@ NEXT_SLICE:
 	}
 
 }
+
 
 
 
@@ -944,6 +980,61 @@ NEXT_ELEMENT:
 
 
 
+// 检查 切片中，是否存在 重复成员
+func SliceCheckRepeatedElement( chceckedSlice interface{} ) (  repeated bool  ,  err error ){
+
+	repeated=false
+	err=nil
+
+	if  chceckedSlice==nil   {
+		err=fmt.Errorf("empty input  " )
+		return 
+	}
+
+	//check type
+	if reflect.TypeOf(chceckedSlice).Kind()!=reflect.Slice  {
+		err=fmt.Errorf("input is not slice "  )
+		return
+	}
+
+	m:=reflect.ValueOf(chceckedSlice)
+	if m.Len()<=1 {
+		return 
+	}
+NEXT_ELEMENT:	
+	for i:=0 ; i<m.Len() ; i++ {
+		if m.Index(i).CanInterface()==false{
+			err=fmt.Errorf("failed to interface{} : %v " , m.Index(i) )
+			return
+		}
+		v1:=m.Index(i).Interface()
+
+
+		for j:=i+1 ; j<m.Len() ; j++ {
+			if m.Index(j).CanInterface()==false{
+				err=fmt.Errorf("failed to interface{} : %v " , m.Index(j) )
+				return
+			}
+			v2:=m.Index(j).Interface()
+
+			if m.Index(i).Kind() != m.Index(j).Kind() {
+				continue NEXT_ELEMENT 
+			}
+
+			if reflect.DeepEqual(v1, v2)==true{
+				repeated=true
+				return 
+			}			
+		}
+
+	}
+
+	return 
+
+}
+
+
+
 
 
 // chceckedMap 可以是 map[string]interface{} 
@@ -998,7 +1089,63 @@ NEXT_ELEMENT:
 }
 
 
+
+
+
+// 检查 map中，是否存在 值重复 （map中，key不可以重复，但不同的key可以有相同的value）
+func MapCheckRepeatedValue( chceckedMap interface{}  ) (  repeated bool  ,  err error ){
+
+	repeated=false
+	err=nil
+
+	if  chceckedMap==nil  {
+		err=fmt.Errorf("empty input  " )
+		return 
+	}
+
+	//check type
+	if reflect.TypeOf(chceckedMap).Kind()!=reflect.Map  {
+		err=fmt.Errorf("input is not map "  )
+		return
+	}
+
+	m:=reflect.ValueOf(chceckedMap)
+	keyList:=m.MapKeys()
+	if len(keyList)<=1 {
+		return
+	}
+
+	for i , k1 := range keyList {
+
+		if m.MapIndex(k1).CanInterface()  ==false{
+			err=fmt.Errorf("failed to interface{} : %v " , m.MapIndex(k1) )
+			return
+		}
+		v1:=m.MapIndex(k1).Interface()
+
+		for j:=i+1 ; j<len(keyList) ; j++ {
+			k2:=keyList[j]
+			
+			if m.MapIndex(k2).CanInterface()  ==false{
+				err=fmt.Errorf("failed to interface{} : %v " , m.MapIndex(k2) )
+				return
+			}
+			v2:=m.MapIndex(k2).Interface()
+
+			if reflect.DeepEqual(v1, v2)==true{
+				repeated=true
+				return 
+			}
+		}
+	}
+
+	return 
+
+}
+
+
 //-----------------------------------
+// 格式转换，一个切片[]interface{} ，转换为 [] map[string]string  类型
 // generate []map[string]string from  []interface{}
 // 入参 []interface{}  必须是   []map[string]string  数据格式
 func SliceToSliceMapStringString( srcSlice interface{} ) ( []map[string]string , error ) {
@@ -1038,10 +1185,19 @@ func SliceToSliceMapStringString( srcSlice interface{} ) ( []map[string]string ,
 				keyName:=key.String()
 
 				// get value
-				if v2.MapIndex(key).Kind() !=reflect.String {
-					return nil , fmt.Errorf("element %v , value type is not string " , v2 )
+				var KeyValue string
+				if v2.MapIndex(key).Kind() ==reflect.String {
+					KeyValue=v2.MapIndex(key).String()
+				}else if v2.MapIndex(key).Kind() == reflect.Interface {
+					t:=v2.MapIndex(key).Interface()
+					if v, ok:=t.(string) ; ok {
+						KeyValue=v
+					}else{
+						return nil , fmt.Errorf("element %v , value type is not string , %v " , v2 , v2.MapIndex(key).Kind() )
+					}
+				}else {
+					return nil , fmt.Errorf("element %v , value type is not string , %v " , v2 , v2.MapIndex(key).Kind() )
 				}
-				KeyValue:=v2.MapIndex(key).String()
 
 				//
 				tmp[keyName]=KeyValue

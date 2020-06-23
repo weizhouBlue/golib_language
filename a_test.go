@@ -107,6 +107,37 @@ func Test_1(t *testing.T){
 
 }
 
+func Test_11(t *testing.T){
+
+	golib.EnableLog=false
+
+	// ----------------
+	a:=[]map[string] interface{} {  
+		map[string] interface{} {
+			"a": "1" ,
+		} , 
+		map[string] interface{} {
+			"b": "2" ,
+		} , 
+	}
+	b:=[]map[string] interface{} {  
+		map[string] interface{} {
+			"a": "1" ,
+		} , 
+		map[string] interface{} {
+			"b": "2" ,
+			"c": "3" , 
+		} , 
+	}
+
+	if  commonSlice , err := golib.SliceGetCommonElement( b ,a   ) ; err!=nil {
+		fmt.Println(  err )
+		t.FailNow()
+	}else{
+		fmt.Println(  commonSlice ) // [1 , 4]
+	}
+
+}
 
 func Test_2(t *testing.T){
 
@@ -346,7 +377,7 @@ func Test_8(t *testing.T){
 		fmt.Println(  err )
 		t.FailNow()
 	}else{
-		fmt.Println(  result ) // [[1 2] 1 2 3 nn mm]
+		fmt.Println(  result ) 
 	}
 
 
@@ -364,7 +395,64 @@ func Test_8(t *testing.T){
 		fmt.Println(  err )
 		t.FailNow()
 	}else{
-		fmt.Println(  result ) // [[1 2] 1 2 3 nn mm]
+		fmt.Println(  result ) 
+	}
+
+
+
+
+}
+
+
+
+
+
+
+
+
+func Test_9(t *testing.T){
+
+	golib.EnableLog=false
+
+	// ----------------
+	a:=[]interface{} {
+		1 , 
+		"100" ,
+		map[string]string {
+			"1": "tt" ,  
+		} ,
+		map[string]string {
+			"1": "tt" ,  
+			"2": "tt" ,  
+		} ,
+	}
+
+	if  result , err := golib.SliceCheckRepeatedElement( a  ) ; err!=nil {
+		fmt.Println(  err )
+		t.FailNow()
+	}else{
+		fmt.Println(  result ) 
+	}
+
+
+
+	// ----------------
+	b:=map[string]interface{} {
+		"1": 100 , 
+		"2": "sadf" , 
+		"3": map[string]string {
+			"1": "tt" ,  
+		} ,
+		"4": map[string]string {
+			"1": "tt" ,  
+		} ,
+	}
+
+	if  result , err := golib.MapCheckRepeatedValue( b  ) ; err!=nil {
+		fmt.Println(  err )
+		t.FailNow()
+	}else{
+		fmt.Println(  result ) 
 	}
 
 
